@@ -19,20 +19,23 @@ var player = null; // initialised to null
 var walls = []; // contains all instances of wall
 var targets = []; // contains all instances of target
 var crates = []; // contains all instances of crates
+var elementWidth = canvas.width/noRows;
+var elementHeight = canvas.height/noColns;
+var numMoves = 0;
 
 var moveDirection = {
-    "LEFT" : [-player.width, 0],
-    "RIGHT" :  [player.width, 0],,
-    "UP" : [0, -player.height],
-    "DOWN" : [0, player.height]
+    "LEFT" : [-elementWidth, 0],
+    "RIGHT" :  [elementWidth, 0],
+    "UP" : [0, -elementHeight],
+    "DOWN" : [0, elementHeight]
 };
 
 // Player constructor
 var Player = function(xPos, yPos, boardIndex) {
     this.xPos = xPos;
     this.yPos = yPos;
-    this.width = canvas.width/noRows;
-    this.height = canvas.height/noColns;
+    this.width = elementWidth;
+    this.height = elementHeight;
     this.colour = "rgb(0,0,0)";
     this.boardIndex = boardIndex;
     this.type = "player";
@@ -42,8 +45,8 @@ var Player = function(xPos, yPos, boardIndex) {
 var Wall = function(xPos, yPos) {
     this.xPos = xPos;
     this.yPos = yPos;
-    this.width = canvas.width/noRows;
-    this.height = canvas.height/noColns;
+    this.width = elementWidth;
+    this.height = elementHeight;
     this.colour = "rgb(10,10,10)";
     this.type = "wall";
 };
@@ -52,8 +55,8 @@ var Wall = function(xPos, yPos) {
 var Crate = function(xPos, yPos) {
     this.xPos = xPos;
     this.yPos = yPos;
-    this.width = canvas.width/noRows;
-    this.height = canvas.height/noColns;
+    this.width = elementWidth;
+    this.height = elementHeight;
     this.colour = "rgb(170,150,30)";
     this.type = "crate";
 };
@@ -62,8 +65,8 @@ var Crate = function(xPos, yPos) {
 var Target = function(xPos, yPos) {
     this.xPos = xPos;
     this.yPos = yPos;
-    this.width = canvas.width/noRows;
-    this.height = canvas.height/noColns;
+    this.width = elementWidth;
+    this.height = elementHeight;
     this.colour = "rgb(200,200,200)";
     this.type = "target";
 };
@@ -107,8 +110,10 @@ var drawElements = function(arr){
 
 // checks validity of move
 var checkMove = function(dir, obj) {
+
     var prospectiveXpos = obj.xPos + dir[0]; // prospective positions are the coordinates of where the player would move to
     var prospectiveYpos = obj.yPos + dir[1];
+
     // iterate over all crates, walls and targets
     for (var i = 0; i < walls.length; i++) {
         if(walls[i].xPos == prospectiveXpos && walls[i].yPos == prospectiveYpos) {
@@ -138,43 +143,54 @@ var checkMove = function(dir, obj) {
     return true;
 };
 
+var checkWin = function(){
+
+    var matchCount = 0;
+    for(var i = 0; i < targets.length; i++)
+    {
+        for(var j = 0; j < crates.length; j++)
+        {
+            if(targets[i].xPos == crates[j].xPos && targets[i].yPos == crates[j].yPos)
+                matchCount++;
+        }
+    }
+
+    if(matchCount == crates.length)
+    {
+        console.log("WIN");
+        console.log("Number of moves " + numMoves);
+    }
+
+};
+
+var movePlayer = function(dir){
+
+    if(checkMove(dir, player))
+    {
+        player.xPos += dir[0];
+        player.yPos += dir[1];
+        drawBoard();
+        numMoves++;
+        checkWin();
+    }
+    
+}
 window.addEventListener("keydown", function (evt) {
     //up
     if (evt.keyCode==38) {
-        
-        var dir = [0, -player.height]
-        if(checkMove(dir, player)) {
-            player.xPos += dir[0];
-            player.yPos += dir[1];
-            drawBoard();
-        }
+        movePlayer(moveDirection.UP);
     }
-    //down - CHANGE KEY CODES
+    //down
     if (evt.keyCode==40) {
-        var dir = [0, player.height]
-        if(checkMove(dir, player)) {
-            player.xPos += dir[0];
-            player.yPos += dir[1];
-            drawBoard();
-        }
+        movePlayer(moveDirection.DOWN);
     }
     //left
     if (evt.keyCode==37) {
-        var dir = [-player.width, 0]
-        if(checkMove(dir, player)) {
-            player.xPos += dir[0];
-            player.yPos += dir[1];
-            drawBoard();
-        }
+        movePlayer(moveDirection.LEFT);
     }
     //right
     if (evt.keyCode==39) {
-        var dir = [player.width, 0]
-        if(checkMove(dir, player)) {
-            player.xPos += dir[0];
-            player.yPos += dir[1];
-            drawBoard();
-        }
+        movePlayer(moveDirection.RIGHT);
     }
 });
 
@@ -193,16 +209,16 @@ var initWorld = function() {
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
         if(elem == 1) {
-            walls.push(new Wall(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows))));
+            walls.push(new Wall(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 2) {
-            crates.push(new Crate(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows))));
+            crates.push(new Crate(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 3) {
-            targets.push(new Target(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows))));
+            targets.push(new Target(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 4) {
-            player = new Player(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows)), index);
+            player = new Player(index%10 * elementWidth, Math.floor(index/10) * elementHeight);
         }
         
     });
