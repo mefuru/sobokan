@@ -23,10 +23,37 @@ var floors = [];
 var elementWidth = canvas.width/noRows;
 var elementHeight = canvas.height/noColns;
 var numMoves = 0;
+
 var wallImage = new Image();
+wallImage.onload = function() {
+    drawBoard();
+};
 wallImage.src = "wall.png";
+
 var floorImage = new Image();
+floorImage.onload = function() {
+    //drawElements(floors);
+    drawBoard();
+};
 floorImage.src = "floor.png";
+
+var targetImage = new Image();
+targetImage.onload = function() {
+    drawBoard();
+};
+targetImage.src = "target.png";
+
+var crateImage = new Image();
+crateImage.onload = function() {
+    drawBoard();
+};
+crateImage.src = "crate.png";
+
+var playerImage = new Image();
+playerImage.onload = function() {
+    drawBoard();
+};
+playerImage.src = "player.png";
 
 function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1) + min);
@@ -55,7 +82,6 @@ var Player = function(xPos, yPos) {
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
-    this.colour = "rgb(0,0,0)";
     this.type = "player";
 };
 
@@ -77,7 +103,6 @@ var Crate = function(xPos, yPos) {
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
-    this.colour = "rgb(170,150,30)";
     this.type = "crate";
 };
 
@@ -87,7 +112,6 @@ var Target = function(xPos, yPos) {
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
-    this.colour = "rgb(200,200,200)";
     this.type = "target";
 };
 
@@ -98,24 +122,19 @@ Floor.prototype.draw = function() {
 };
 
 Player.prototype.draw = function() {
-    context.fillStyle = this.colour;
-    context.fillRect(this.xPos, this.yPos, this.width, this.height);
+    context.drawImage(playerImage, this.xPos, this.yPos, this.width, this.height);
 };
 
 Wall.prototype.draw = function() {
-    // context.fillStyle = this.colour;
-    // context.fillRect(this.xPos, this.yPos, this.width, this.height);
     context.drawImage(wallImage, this.xPos, this.yPos, this.width, this.height);
 };
 
 Crate.prototype.draw = function() {
-    context.fillStyle = this.colour;
-    context.fillRect(this.xPos, this.yPos, this.width, this.height);
+    context.drawImage(crateImage, this.xPos, this.yPos, this.width, this.height);
 };
 
 Target.prototype.draw = function() {
-    context.fillStyle = this.colour;
-    context.fillRect(this.xPos, this.yPos, this.width, this.height);
+    context.drawImage(targetImage, this.xPos, this.yPos, this.width, this.height);
 };
 
 // draw function
@@ -243,6 +262,7 @@ var initWorld = function() {
             crates.push(new Crate(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 3) {
+            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
             targets.push(new Target(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 4) {
@@ -255,9 +275,5 @@ var initWorld = function() {
     });
 };
 
-var animate = function() {
-    drawBoard();
-};
-
 initWorld();
-animate();
+drawBoard();
