@@ -21,10 +21,10 @@ var targets = []; // contains all instances of target
 var crates = []; // contains all instances of crates
 
 var moveDirection = {
-    "LEFT" : -1,
-    "RIGHT" : 1,
-    "UP" : -10,
-    "DOWN" : 10
+    "LEFT" : [-player.width, 0],
+    "RIGHT" :  [player.width, 0],,
+    "UP" : [0, -player.height],
+    "DOWN" : [0, player.height]
 };
 
 // Player constructor
@@ -35,6 +35,7 @@ var Player = function(xPos, yPos, boardIndex) {
     this.height = canvas.height/noColns;
     this.colour = "rgb(0,0,0)";
     this.boardIndex = boardIndex;
+    this.type = "player";
 };
 
 // Wall constructor
@@ -44,6 +45,7 @@ var Wall = function(xPos, yPos) {
     this.width = canvas.width/noRows;
     this.height = canvas.height/noColns;
     this.colour = "rgb(10,10,10)";
+    this.type = "wall";
 };
 
 // Crate constructor
@@ -53,6 +55,7 @@ var Crate = function(xPos, yPos) {
     this.width = canvas.width/noRows;
     this.height = canvas.height/noColns;
     this.colour = "rgb(170,150,30)";
+    this.type = "crate";
 };
 
 // Target constructor
@@ -62,6 +65,7 @@ var Target = function(xPos, yPos) {
     this.width = canvas.width/noRows;
     this.height = canvas.height/noColns;
     this.colour = "rgb(200,200,200)";
+    this.type = "target";
 };
 
 // draw functions
@@ -85,32 +89,6 @@ Target.prototype.draw = function() {
     context.fillRect(this.xPos, this.yPos, this.width, this.height);
 };
 
-// move function - changes player position and draws all elems. Deprecated
-Player.prototype.move = function(moveDir)
-{
-    player.boardIndex += moveDir;
-    currentWorldState.forEach(function(elem, index, arr) {
-        if(elem == 1) {
-            var wall = new Wall(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows)));
-            wall.draw(); 
-        }
-        else if(elem == 2) {
-            var crate = new Crate(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows)));
-            crate.draw(); 
-        }
-        else if(elem == 3) {
-            var target = new Target(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows)));
-            target.draw(); 
-        }
-        else if(elem == 4) {
-            player = new Player(index%10 * (canvas.width/noColns), (Math.floor(index/10) * (canvas.height/noRows)), index);
-            console.log("Board index of player: " + player.boardIndex);
-            player.draw(); 
-        }
-
-    });
-}
-
 // draw function
 var drawBoard = function(){
     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
@@ -127,60 +105,43 @@ var drawElements = function(arr){
     });
 };
 
-// checks validity of crate move
-var checkMove2 = function(dir, obj) {
-    var prospectiveXpos = obj.xPos + dir[0];
-    var prospectiveYpos = obj.yPos + dir[1];
-    // iterate over all crates, walls and targets
-    walls.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {return false};
-    });    
-    targets.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {
-            return true;
-        }
-    });
-    
-    crates.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {return false};
-    });
-    return true;
-};
-
 // checks validity of move
 var checkMove = function(dir, obj) {
     var prospectiveXpos = obj.xPos + dir[0]; // prospective positions are the coordinates of where the player would move to
     var prospectiveYpos = obj.yPos + dir[1];
     // iterate over all crates, walls and targets
-    targets.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {
-            console.log('hit target');
-            return true;
-        }
-    });
-    walls.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {
-            console.log('hit wall');
+    for (var i = 0; i < walls.length; i++) {
+        if(walls[i].xPos == prospectiveXpos && walls[i].yPos == prospectiveYpos) {
             return false;
         }
-    });
-    crates.forEach(function(elem, index, arr) {
-        if (elem.xPos == prospectiveXpos && elem.yPos == prospectiveYpos) {
-            // move player and crate IF there is no elem or there is a target after the crate
-            if(checkMove2(dir, elem)) {
-                elem.xPos += dir[0];
-                elem.yPos += dir[1];
+    }
+    for (var i = 0; i < crates.length; i++) {
+        if(crates[i].xPos == prospectiveXpos && crates[i].yPos == prospectiveYpos) {
+            if (obj.type == "crate") return false; // if current obj is crate, return false as cannot move
+            if (checkMove(dir, crates[i])) {
+                crates[i].xPos += dir[0];
+                crates[i].yPos += dir[1];
                 return true;
             } else return false;
         }
-    });
-    console.log('hey');
+    }
+    for (var i = 0; i < targets.length; i++) {
+        if(targets[i].xPos == prospectiveXpos && targets[i].yPos == prospectiveYpos) {
+            for (var i = 0; i < crates.length; i++) {
+                if(crates[i].xPos == prospectiveXpos && crates[i].yPos == prospectiveYpos) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
     return true;
 };
 
 window.addEventListener("keydown", function (evt) {
     //up
     if (evt.keyCode==38) {
+        
         var dir = [0, -player.height]
         if(checkMove(dir, player)) {
             player.xPos += dir[0];
@@ -188,33 +149,33 @@ window.addEventListener("keydown", function (evt) {
             drawBoard();
         }
     }
-    // //down
-    // if (evt.keyCode==40 && currentWorldState[player.boardIndex + moveDirection.DOWN] === 0) {
-    //     currentWorldState[player.boardIndex + moveDirection.DOWN] = 4;
-    //     currentWorldState[player.boardIndex] = 0;
-
-    //     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-    //     player.move(moveDirection.DOWN);
-    // }
-    // //left
-    // if (evt.keyCode==37 && currentWorldState[player.boardIndex + moveDirection.LEFT] === 0) {
-    //     currentWorldState[player.boardIndex + moveDirection.LEFT] = 4;
-    //     currentWorldState[player.boardIndex] = 0;
-
-    //     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-    //     player.move(moveDirection.LEFT);
-    // }
-    // //right
-    // if (evt.keyCode==39 && currentWorldState[player.boardIndex + moveDirection.RIGHT] === 0) {
-    //     currentWorldState[player.boardIndex + moveDirection.RIGHT] = 4;
-    //     currentWorldState[player.boardIndex] = 0;
-
-    //     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
-
-    //     player.move(moveDirection.RIGHT);
-    // }
+    //down - CHANGE KEY CODES
+    if (evt.keyCode==40) {
+        var dir = [0, player.height]
+        if(checkMove(dir, player)) {
+            player.xPos += dir[0];
+            player.yPos += dir[1];
+            drawBoard();
+        }
+    }
+    //left
+    if (evt.keyCode==37) {
+        var dir = [-player.width, 0]
+        if(checkMove(dir, player)) {
+            player.xPos += dir[0];
+            player.yPos += dir[1];
+            drawBoard();
+        }
+    }
+    //right
+    if (evt.keyCode==39) {
+        var dir = [player.width, 0]
+        if(checkMove(dir, player)) {
+            player.xPos += dir[0];
+            player.yPos += dir[1];
+            drawBoard();
+        }
+    }
 });
 
 var initWorld = function() {
@@ -226,10 +187,9 @@ var initWorld = function() {
                   1, 0, 1, 0, 3, 0, 1, 1, 0, 0,
                   1, 2, 0, 0, 0, 0, 3, 1, 0, 0,
                   1, 0, 0, 1, 2, 2, 0, 1, 0, 0,
-                  1, 0, 0, 4, 3, 0, 2, 1, 0, 0,
+                  1, 0, 0, 4, 3, 0, 0, 1, 0, 0,
                   1, 1, 1, 1, 1, 1, 1, 1, 0, 0
                 ];
-    currentWorldState = world.slice();
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
         if(elem == 1) {
