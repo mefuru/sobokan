@@ -19,9 +19,19 @@ var player = null; // initialised to null
 var walls = []; // contains all instances of wall
 var targets = []; // contains all instances of target
 var crates = []; // contains all instances of crates
+var floors = [];
 var elementWidth = canvas.width/noRows;
 var elementHeight = canvas.height/noColns;
 var numMoves = 0;
+var wallImage = new Image();
+wallImage.src = "wall.png";
+var floorImage = new Image();
+floorImage.src = "floor.png";
+
+function getRandomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
 
 var moveDirection = {
     "LEFT" : [-elementWidth, 0],
@@ -30,14 +40,22 @@ var moveDirection = {
     "DOWN" : [0, elementHeight]
 };
 
+// Floor constructor
+var Floor = function(xPos, yPos) {
+    this.xPos = xPos;
+    this.yPos = yPos;
+    this.width = elementWidth;
+    this.height = elementHeight;
+    this.type = "floor";
+};
+
 // Player constructor
-var Player = function(xPos, yPos, boardIndex) {
+var Player = function(xPos, yPos) {
     this.xPos = xPos;
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
     this.colour = "rgb(0,0,0)";
-    this.boardIndex = boardIndex;
     this.type = "player";
 };
 
@@ -47,8 +65,10 @@ var Wall = function(xPos, yPos) {
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
-    this.colour = "rgb(10,10,10)";
     this.type = "wall";
+    this.tileSize = 80;
+    this.imageXPos = 0;
+    this.imageYPos = 0;
 };
 
 // Crate constructor
@@ -72,14 +92,20 @@ var Target = function(xPos, yPos) {
 };
 
 // draw functions
+
+Floor.prototype.draw = function() {
+    context.drawImage(floorImage, this.xPos, this.yPos, this.width, this.height);
+};
+
 Player.prototype.draw = function() {
     context.fillStyle = this.colour;
     context.fillRect(this.xPos, this.yPos, this.width, this.height);
 };
 
 Wall.prototype.draw = function() {
-    context.fillStyle = this.colour;
-    context.fillRect(this.xPos, this.yPos, this.width, this.height);
+    // context.fillStyle = this.colour;
+    // context.fillRect(this.xPos, this.yPos, this.width, this.height);
+    context.drawImage(wallImage, this.xPos, this.yPos, this.width, this.height);
 };
 
 Crate.prototype.draw = function() {
@@ -95,6 +121,7 @@ Target.prototype.draw = function() {
 // draw function
 var drawBoard = function(){
     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+    drawElements(floors);
     drawElements(walls);
     drawElements(targets);
     drawElements(crates);
@@ -103,9 +130,9 @@ var drawBoard = function(){
 
 // helper function to iterate over all elems on board and draw
 var drawElements = function(arr){
-    arr.forEach(function(elem, index, array){
-        elem.draw();
-    });
+    for (var i = 0; i < arr.length; i++) {
+        arr[i].draw();
+    }
 };
 
 // checks validity of move
@@ -195,16 +222,16 @@ window.addEventListener("keydown", function (evt) {
 });
 
 var initWorld = function() {
-    var world = [ 0, 0, 1, 1, 1, 1, 1, 0, 0, 0,
-                  1, 1, 1, 0, 0, 0, 1, 0, 0, 0,
-                  1, 3, 0, 2, 0, 0, 1, 0, 0, 0,
-                  1, 1, 1, 0, 2, 3, 1, 0, 0, 0,
-                  1, 3, 1, 1, 2, 0, 1, 0, 0, 0,
-                  1, 0, 1, 0, 3, 0, 1, 1, 0, 0,
-                  1, 2, 0, 0, 0, 0, 3, 1, 0, 0,
-                  1, 0, 0, 1, 2, 2, 0, 1, 0, 0,
-                  1, 0, 0, 4, 3, 0, 0, 1, 0, 0,
-                  1, 1, 1, 1, 1, 1, 1, 1, 0, 0
+    var world = [ -1, -1, 1, 1, 1, 1, 1, -1, -1, -1,
+                  1, 1, 1, 0, 0, 0, 1, -1, -1, -1,
+                  1, 3, 0, 2, 0, 0, 1, -1, -1, -1,
+                  1, 1, 1, 0, 2, 3, 1, -1, -1, -1,
+                  1, 3, 1, 1, 2, 0, 1, -1, -1, -1,
+                  1, 0, 1, 0, 3, 0, 1, 1, -1, -1,
+                  1, 2, 0, 0, 0, 0, 3, 1, -1, -1,
+                  1, 0, 0, 1, 2, 2, 0, 1, -1, -1,
+                  1, 0, 0, 4, 3, 0, 0, 1, -1, -1,
+                  1, 1, 1, 1, 1, 1, 1, 1, -1, -1
                 ];
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
@@ -212,15 +239,19 @@ var initWorld = function() {
             walls.push(new Wall(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 2) {
+            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
             crates.push(new Crate(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 3) {
             targets.push(new Target(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
         }
         else if(elem == 4) {
+            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
             player = new Player(index%10 * elementWidth, Math.floor(index/10) * elementHeight);
         }
-        
+        else if(elem == 0) {
+            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
+        }
     });
 };
 
