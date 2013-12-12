@@ -24,6 +24,7 @@ var elementWidth = canvas.width/noRows;
 var elementHeight = canvas.height/noColns;
 var numMoves = 0;
 
+
 var wallImage = new Image();
 wallImage.onload = function() {
     drawBoard();
@@ -32,7 +33,6 @@ wallImage.src = "wall.png";
 
 var floorImage = new Image();
 floorImage.onload = function() {
-    //drawElements(floors);
     drawBoard();
 };
 floorImage.src = "floor.png";
@@ -51,90 +51,39 @@ crateImage.src = "crate.png";
 
 var playerImage = new Image();
 playerImage.onload = function() {
+    console.log(playerImage);
     drawBoard();
 };
 playerImage.src = "player.png";
 
-function getRandomInt(min, max) {
-    return Math.floor(Math.random() * (max - min + 1) + min);
-}
-
+var imageMap = {
+    "floor": floorImage,
+    "crate": crateImage,
+    "player": playerImage,
+    "wall": wallImage,
+    "target": targetImage
+};
 
 var moveDirection = {
     "LEFT" : [-elementWidth, 0],
-    "RIGHT" :  [elementWidth, 0],
+    "RIGHT" : [elementWidth, 0],
     "UP" : [0, -elementHeight],
     "DOWN" : [0, elementHeight]
 };
 
-// Floor constructor
-var Floor = function(xPos, yPos) {
+// Tile constructor
+var Tile = function(xPos, yPos, type) {
     this.xPos = xPos;
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
-    this.type = "floor";
-};
-
-// Player constructor
-var Player = function(xPos, yPos) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = "player";
-};
-
-// Wall constructor
-var Wall = function(xPos, yPos) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = "wall";
-    this.tileSize = 80;
-    this.imageXPos = 0;
-    this.imageYPos = 0;
-};
-
-// Crate constructor
-var Crate = function(xPos, yPos) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = "crate";
-};
-
-// Target constructor
-var Target = function(xPos, yPos) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = "target";
+    this.type = type;
 };
 
 // draw functions
-
-Floor.prototype.draw = function() {
-    context.drawImage(floorImage, this.xPos, this.yPos, this.width, this.height);
-};
-
-Player.prototype.draw = function() {
-    context.drawImage(playerImage, this.xPos, this.yPos, this.width, this.height);
-};
-
-Wall.prototype.draw = function() {
-    context.drawImage(wallImage, this.xPos, this.yPos, this.width, this.height);
-};
-
-Crate.prototype.draw = function() {
-    context.drawImage(crateImage, this.xPos, this.yPos, this.width, this.height);
-};
-
-Target.prototype.draw = function() {
-    context.drawImage(targetImage, this.xPos, this.yPos, this.width, this.height);
+Tile.prototype.draw = function() {
+    console.log(imageMap);
+    context.drawImage(imageMap[this.type], this.xPos, this.yPos, this.width, this.height);
 };
 
 // draw function
@@ -156,10 +105,8 @@ var drawElements = function(arr){
 
 // checks validity of move
 var checkMove = function(dir, obj) {
-
     var prospectiveXpos = obj.xPos + dir[0]; // prospective positions are the coordinates of where the player would move to
     var prospectiveYpos = obj.yPos + dir[1];
-
     // iterate over all crates, walls and targets
     for (var i = 0; i < walls.length; i++) {
         if(walls[i].xPos == prospectiveXpos && walls[i].yPos == prospectiveYpos) {
@@ -255,25 +202,24 @@ var initWorld = function() {
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
         if(elem == 1) {
-            walls.push(new Wall(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
+            walls.push(new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'wall'));
         }
         else if(elem == 2) {
-            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
-            crates.push(new Crate(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
+            floors.push( new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'floor'));
+            crates.push(new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'crate'));
         }
         else if(elem == 3) {
-            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
-            targets.push(new Target(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
+            floors.push( new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'floor'));
+            targets.push(new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'target'));
         }
         else if(elem == 4) {
-            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
-            player = new Player(index%10 * elementWidth, Math.floor(index/10) * elementHeight);
+            floors.push(new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'floor'));
+            player = new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'player');
         }
         else if(elem == 0) {
-            floors.push( new Floor(index%10 * elementWidth, Math.floor(index/10) * elementHeight));
+            floors.push( new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'floor'));
         }
     });
 };
 
 initWorld();
-drawBoard();
