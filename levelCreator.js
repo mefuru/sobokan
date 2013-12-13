@@ -25,6 +25,7 @@ var mapElements = [];
 var elementWidth = canvas.width/noRows;
 var elementHeight = canvas.height/noColns;
 var numMoves = 0;
+var playerIndex = -1;
 
 var wallImage = new Image();
 wallImage.onload = function() {
@@ -70,12 +71,17 @@ var imageMap = {
 };
 
 // Tile constructor
-var Tile = function(xPos, yPos, type) {
+var Tile = function(xPos, yPos, type, mutable) {
     this.xPos = xPos;
     this.yPos = yPos;
     this.width = elementWidth;
     this.height = elementHeight;
     this.type = type;
+    if(mutable!==false){
+        this.mutable = true;
+    } else {
+        this.mutable = mutable;
+    }
 };
 
 // draw functions
@@ -102,20 +108,24 @@ var drawElements = function(arr){
 };
 
 var initWorld = function() {
-    world = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-              0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    world = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 1, 1, 1, 1, 1, 1, 1, 1, 1
             ];
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
+        if(elem==0){
         mapElements.push( new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'floor'));
+        } else {
+            mapElements.push( new Tile(index%10 * elementWidth, Math.floor(index/10) * elementHeight, 'wall', false));
+        }
     });
 };
 
@@ -133,7 +143,6 @@ var initMapEditor = function() {
     editorTiles.push(new Tile(10, 300, 'player'));
     editorTiles.push(new Tile(10, 400, 'crate'));
     editorTiles.push(new Tile(10, 500, 'target'));
-
     selectedEditorTile = 'player';
 };
 
@@ -142,12 +151,23 @@ canvas.addEventListener('click', function(event) {
     console.log('canvas 1 clicked on');
     var x = event.pageX,
         y = event.pageY;
-    mapElements.forEach(function(elem) {
-        if(y > elem.yPos && y < elem.yPos + elementHeight && x > elem.xPos && x < elem.xPos + elementWidth) {
-            console.log(elem.type);
-            console.log(selectedEditorTile);
-            elem.type = selectedEditorTile;
-            drawBoard();
+    mapElements.forEach(function(elem, index) {
+        if(y > elem.yPos && y < elem.yPos + elementHeight && x > elem.xPos && x < elem.xPos + elementWidth && elem.mutable === true) {
+            if(selectedEditorTile === 'player') {
+                if(playerIndex === -1) {
+                    playerIndex = index;
+                    elem.type = selectedEditorTile;
+                    drawBoard();
+                } else {
+                    mapElements[playerIndex].type = 'floor';
+                    playerIndex = index;
+                    elem.type = selectedEditorTile;
+                    drawBoard();
+                }
+            } else {
+                elem.type = selectedEditorTile;
+                drawBoard();
+            }
         }
     });
 }, false);
