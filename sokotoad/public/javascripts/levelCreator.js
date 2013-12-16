@@ -129,10 +129,27 @@ var initWorld = function() {
     });
 };
 
+var sendLevelToServer = function(path, value){
 
-// create and save level array
+	method = "post";
+
+	var form = document.createElement("form");
+	form.setAttribute("method", method);
+	form.setAttribute("action", path);
+
+	var hiddenField = document.createElement("input");
+	hiddenField.setAttribute("type", "hidden");
+	hiddenField.setAttribute("name", "level");
+	hiddenField.setAttribute("value", value);
+	form.appendChild(hiddenField);
+
+	document.body.appendChild(form);
+	form.submit();
+}
+
+// create and save level arraym);
 var saveLevel = function() {
-    return JSON.stringify(mapElements.map(enumerateType));
+    sendLevelToServer("/createLevel", JSON.stringify(mapElements.map(enumerateType));
 };
 
 // helper fn for saveLevel

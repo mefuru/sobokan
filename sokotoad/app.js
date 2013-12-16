@@ -6,6 +6,7 @@
 var express = require('express');
 var routes = require('./routes');
 var levelCreator = require('./routes/levelCreator');
+var saveLevel = require('./routes/saveLevel');
 var http = require('http');
 var path = require('path');
 var cons = require('consolidate');
@@ -33,6 +34,7 @@ if ('development' == app.get('env')) {
 
 app.get('/', routes.index);
 app.get('/levelCreator', levelCreator.levelCreator);
+app.post('/saveLevel', saveLevel.saveLevel);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
