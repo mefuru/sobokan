@@ -149,7 +149,7 @@ var sendLevelToServer = function(path, value){
 
 // create and save level arraym);
 var saveLevel = function() {
-    sendLevelToServer("/createLevel", JSON.stringify(mapElements.map(enumerateType));
+    sendLevelToServer("/createLevel", JSON.stringify(mapElements.map(enumerateType)));
 };
 
 // helper fn for saveLevel
