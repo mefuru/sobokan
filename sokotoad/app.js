@@ -5,8 +5,6 @@
 
 var express = require('express');
 var routes = require('./routes');
-var levelCreator = require('./routes/levelCreator');
-var saveLevel = require('./routes/saveLevel');
 var http = require('http');
 var path = require('path');
 var cons = require('consolidate');
