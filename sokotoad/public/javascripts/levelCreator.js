@@ -1,7 +1,7 @@
 // Initialise variables
 var canvas = document.createElement("canvas");
-canvas.width = 800;
-canvas.height = 800;
+canvas.width = 500;
+canvas.height = 500;
 document.body.appendChild(canvas);
 var context = canvas.getContext("2d"),
 noRows = 10,
@@ -68,25 +68,6 @@ var imageMap = {
     "player": playerImage,
     "wall": wallImage,
     "target": targetImage
-};
-
-// Tile constructor
-var Tile = function(xPos, yPos, type, mutable) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = type;
-    if(mutable!==false){
-        this.mutable = true;
-    } else {
-        this.mutable = mutable;
-    }
-};
-
-// draw functions
-Tile.prototype.draw = function(context) {
-    context.drawImage(imageMap[this.type], this.xPos, this.yPos, this.width, this.height);
 };
 
 // draw function
@@ -165,7 +146,7 @@ var drawSelectorTiles = function(){
     });
 };
 
-// hooks up a button
+// hooks up a button to save level fn
 var initSaveButton = function() {
     var saveButton = document.getElementById("saveButton");
     saveButton.addEventListener("click", function(event) {

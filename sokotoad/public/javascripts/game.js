@@ -1,13 +1,11 @@
-
 // Initialise variables
 var canvas = document.createElement("canvas");
-canvas.width = 800;
-canvas.height = 800;
+canvas.width = 500;
+canvas.height = 500;
 document.body.appendChild(canvas);
 var context = canvas.getContext("2d"),
 noRows = 10,
 noColns = 10;
-
 var currentWorldState = [];
 var player = null; // initialised to null
 var walls = []; // contains all instances of wall
@@ -17,7 +15,6 @@ var floors = [];
 var elementWidth = canvas.width/noRows;
 var elementHeight = canvas.height/noColns;
 var numMoves = 0;
-
 
 var wallImage = new Image();
 wallImage.onload = function() {
@@ -45,7 +42,6 @@ crateImage.src = "images/crate.png";
 
 var playerImage = new Image();
 playerImage.onload = function() {
-    console.log(playerImage);
     drawBoard();
 };
 playerImage.src = "images/player.png";
@@ -65,21 +61,6 @@ var moveDirection = {
     "DOWN" : [0, elementHeight]
 };
 
-// Tile constructor
-var Tile = function(xPos, yPos, type) {
-    this.xPos = xPos;
-    this.yPos = yPos;
-    this.width = elementWidth;
-    this.height = elementHeight;
-    this.type = type;
-};
-
-// draw functions
-Tile.prototype.draw = function() {
-    console.log(imageMap);
-    context.drawImage(imageMap[this.type], this.xPos, this.yPos, this.width, this.height);
-};
-
 // draw function
 var drawBoard = function(){
     context.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
@@ -87,13 +68,13 @@ var drawBoard = function(){
     drawElements(walls);
     drawElements(targets);
     drawElements(crates);
-    player.draw();
+    player.draw(context);
 };
 
 // helper function to iterate over all elems on board and draw
 var drawElements = function(arr){
     for (var i = 0; i < arr.length; i++) {
-        arr[i].draw();
+        arr[i].draw(context);
     }
 };
 
@@ -182,7 +163,10 @@ window.addEventListener("keydown", function (evt) {
 });
 
 var initWorld = function() {
-    var world =[ -1, -1, 1, 1, 1, 1, 1, -1, -1, -1,
+    var world;
+    if (levelData!=undefined) {
+        world = levelData;
+    } else {world = [ -1, -1, 1, 1, 1, 1, 1, -1, -1, -1,
                   1, 1, 1, 0, 0, 0, 1, -1, -1, -1,
                   1, 3, 0, 2, 0, 0, 1, -1, -1, -1,
                   1, 1, 1, 0, 2, 3, 1, -1, -1, -1,
@@ -193,6 +177,7 @@ var initWorld = function() {
                   1, 0, 0, 4, 3, 0, 0, 1, -1, -1,
                   1, 1, 1, 1, 1, 1, 1, 1, -1, -1
                 ];
+           }
     // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
     world.forEach(function(elem, index, arr) {
         if(elem == 1) {
