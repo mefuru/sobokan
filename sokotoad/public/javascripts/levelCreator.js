@@ -130,13 +130,10 @@ var initWorld = function() {
 };
 
 var sendLevelToServer = function(path, value){
-
 	method = "post";
-
 	var form = document.createElement("form");
 	form.setAttribute("method", method);
 	form.setAttribute("action", path);
-
 	var hiddenField = document.createElement("input");
 	hiddenField.setAttribute("type", "hidden");
 	hiddenField.setAttribute("name", "level");
