@@ -2,29 +2,31 @@
 
 //add jQuery to use ajax to request files from the server, OR mongodb soon
 
-//Fix the ambiguity between the levelCreator.js and game.js.. now
-//game.js draws the board even in edit mode, while levelCreator keeps a reference to the game.mapElements
-//Maybe not the best solution...
+
+var imageMgr = new ImageManager();
 
 var Game = function(){
 
-   this.numRows = 10;
-   this.numCols = 10;
-
-   this.player = null; // initialised to null
-   this.walls = []; // contains all instances of wall
-   this.targets = []; // contains all instances of target
-   this.crates = []; // contains all instances of crates
+   this.player = null; // initialised to null, loads later
+   this.walls = []; 
+   this.targets = [];
+   this.crates = []; 
    this.floors = [];
    this.numMoves = 0;
 
-
-//   this.world = [];
+   this.mapElements = []; //for editor atm.
 };
 
+//can be used to set number of rows/cols for new level
 Game.prototype.initVariables = function(){
+    
+    this.numRows = 10;
+    this.numCols = 10;
 
-    this.elementWidth = this.canvas.width/this.numRows; //superfluous since the board will be composed of sqares?
+    //useful to have both w/h and size as w/h is used for placement, and 
+    //if the board is non-uniform, one general size of elements won't do?
+    //size used for element size ? Idk. Look over this
+    this.elementWidth = this.canvas.width/this.numRows;
     this.elementHeight = this.canvas.height/this.numCols;
     this.elementSize = this.canvas.width/this.numRows;
 
@@ -34,76 +36,51 @@ Game.prototype.initVariables = function(){
         "UP" : [0, -this.elementHeight],
         "DOWN" : [0, this.elementHeight]
     };
-
 };
 
 Game.prototype.play = function(){
     //if path not set, load default level
-    this.setupImages(); //Begin loading images first
-    this.setupMainRenderContext();
+    this.setupMainRenderContext(500);
     this.initVariables();
+    this.setupBoard(); 
     this.setupGameEventlistener(this);
-    //this.loadLevel();
-    //this.drawBoard();
 
 };
 
-//combine these two
-Game.prototype.setupMainRenderContext = function(){
+//function can take in param size so that user can set size of new level
+Game.prototype.createNewLevel = function(numTiles){
+    this.setupMainRenderContext(500);
+    this.initVariables();
+    this.setupBoard();
+    var editor = new Editor(this);
+};
+
+Game.prototype.setupMainRenderContext = function(size){
 
 	this.canvas = document.createElement("canvas");
-	this.canvas.width = 800;
-	this.canvas.height = 800;
+	this.canvas.width = size;
+	this.canvas.height = size;
 	document.body.appendChild(this.canvas);
 
 	this.context = this.canvas.getContext("2d");
 };
 
-Game.prototype.setupImages = function(){
+Game.prototype.setupBoard = function(){
 
-    //Setting up a variable that will store setInterval function so we can clear after loading is finished
+    imageMgr.load("images/wall.png", "wall");
+    imageMgr.load("images/floor.png", "floor");
+    imageMgr.load("images/target.png", "target");
+    imageMgr.load("images/crate.png", "crate");
+    imageMgr.load("images/player.png", "player");
+    
+
     var intervalId;
-    var count = 0;
-    //Returns the image when finished loading
-    var loadAsset = function(path, thisArg, callback){    
-        var img = new Image();
-        img.onload = function() {
-            console.log("Loaded image with path " + path);
-            callback(thisArg, img);
-        };
-        img.src = path;
-    };
-
-    loadAsset("images/wall.png", this, function(thisArg, img){
-        thisArg.wallImage = img;
-    });
-    loadAsset("images/floor.png", this, function(thisArg, img){
-        thisArg.floorImage = img;
-    });
-    loadAsset("images/target.png", this, function(thisArg, img){
-        thisArg.targetImage = img;
-    });
-    loadAsset("images/crate.png", this, function(thisArg, img){
-        thisArg.crateImage = img;
-    });
-    loadAsset("images/player.png", this, function(thisArg, img){
-        thisArg.playerImage = img;
-    });
 
     var waitForImagesToLoad = function(){
-        if(this.wallImage == undefined || this.floorImage == undefined
-            || this.targetImage == undefined || this.crateImage == undefined
-            || this.playerImage == undefined){
+        if(!imageMgr.isFinishedLoading()){
             console.log("Loading images...");
         }
         else{
-            this.imageMap = {
-                "floor": this.floorImage,
-                "crate": this.crateImage,
-                "player": this.playerImage,
-                "wall": this.wallImage,
-                "target": this.targetImage
-            };
             clearInterval(intervalId);
             console.log("Finised loading images"); 
 
@@ -113,8 +90,7 @@ Game.prototype.setupImages = function(){
     };
 
     var boundWait = waitForImagesToLoad.bind(this);
-    intervalId = setInterval(boundWait, 500);
-
+    intervalId = setInterval(boundWait, 500);    
 };
 
 //Draws the board
@@ -133,6 +109,7 @@ Game.prototype.drawBoard = function(){
     drawElements(this.walls, this.context);
     drawElements(this.targets, this.context);
     drawElements(this.crates, this.context);
+    drawElements(this.mapElements, this.context);
     this.player.draw(this.context);
 
 };
@@ -199,7 +176,6 @@ Game.prototype.movePlayer = function(dir){
 
 Game.prototype.setupGameEventlistener = function(gameref){
 
-
     window.addEventListener("keydown", function (evt) {
         //up
         if (evt.keyCode==38) {
@@ -220,8 +196,36 @@ Game.prototype.setupGameEventlistener = function(gameref){
     });
 };
 
+//Sets up an empty level for the editor
+//This will be replaced when we can load from file
+//then we just load "editorLevel" or the user can chose to edit saved lvl
+Game.prototype.setupEditorLevel = function(){
+    var world = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+            ];
+    // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
+    for(var i = 0; i < world.length; i++){
+        (function(i){
+            if(world[i] == 0){
+                this.mapElements.push( new Tile(i % 10 * this.elementSize, Math.floor(i/10) * this.elementSize, 'floor'));
+            } else {
+                this.mapElements.push( new Tile(i % 10 * this.elementSize, Math.floor(i/10) * this.elementSize, 'wall', false));
+            }                
+        }).call(this, i);
+    }
 
-//Loads either default level from file or from post request, or empty lvl also from file (for editor)
+};
+
+//Loads either default level from file or from post request, 
+//or empty lvl also from file (for editor)
 Game.prototype.loadLevel = function(levelData){
     console.log("this of loadLevel fn: " + this);
     var world = [];
@@ -245,47 +249,25 @@ Game.prototype.loadLevel = function(levelData){
     for(var i = 0; i < world.length; i++){
         (function(i){
             if(world[i] == 1) {
-                this.walls.push(new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'wall'));
+                this.walls.push(new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'wall'));
             }
             else if(world[i] == 2) {
-                this.floors.push(new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
-                this.crates.push(new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'crate'));
+                this.floors.push(new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
+                this.crates.push(new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'crate'));
             }
             else if(world[i] == 3) {
-                this.floors.push( new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
-                this.targets.push(new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'target'));
+                this.floors.push( new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
+                this.targets.push(new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'target'));
             }
             else if(world[i] == 4) {
-                this.floors.push(new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
-                this.player = new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'player');
+                this.floors.push(new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
+                this.player = new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'player');
             }
             else if(world[i] == 0) {
-                this.floors.push( new Tile(this.imageMap, i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
+                this.floors.push( new Tile(i%10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, this.elementSize, 'floor'));
             }                
         }).call(this, i);
     }
- 
-    // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
-    /*this.world.forEach(function(elem, index, arr) {
-        if(elem == 1) {
-            this.walls.push(new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'wall'));
-        }
-        else if(elem == 2) {
-            this.floors.push(new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'floor'));
-            this.crates.push(new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'crate'));
-        }
-        else if(elem == 3) {
-            this.floors.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'floor'));
-            this.targets.push(new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'target'));
-        }
-        else if(elem == 4) {
-            this.floors.push(new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'floor'));
-            this.player = new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'player');
-        }
-        else if(elem == 0) {
-            this.floors.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, this.elementSize, 'floor'));
-        }
-    });*/
 };
 
 var game = new Game();

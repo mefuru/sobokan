@@ -1,18 +1,16 @@
 var Editor = function(game){
 
     this.game = game;
-    //needs acces to images from game, send in this (game) ?
-    //setuptRenderContext
-   this.editorTiles = []; //Chooseable tiles to create the level with
-   this.selectedEditorTile = ''; //String type of tile
-   this.playerIndex = -1; //To check if a player has been added to board
+    this.editorTiles = []; //Chooseable tiles to create the level with
+    this.selectedEditorTile = ''; //String type of tile
+    this.playerIndex = -1; //To check if a player has been added to board
 
-   this.setupEditorRenderContext(); //trenger man this?
-   this.initMapEditor();
-   this.setupEventListenerBoard();
-   this.setupEventListenerEditor();
-   this.initSaveButton();
-   this.drawSelectorTiles();
+    this.setupEditorRenderContext();
+    this.initMapEditor();
+    this.setupEventListenerBoard();
+    this.setupEventListenerEditor();
+    this.initSaveButton();
+    this.drawSelectorTiles();
 };
 
 Editor.prototype.setupEditorRenderContext = function(){
@@ -34,38 +32,6 @@ Editor.prototype.initMapEditor = function() {
     this.editorTiles.push(new Tile(10, 500, 'target'));
     this.selectedEditorTile = 'player';
 
-};
-//Sets up and empty level for the editor
-Game.prototype.loadEditorLevel = function(){
-    world = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-              1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-            ];
-    // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
-    for(var i = 0; i < world.length; i++){
-        (function(i){
-            if(world[i] == 0){
-                this.mapElements.push( new Tile(i % 10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, 'floor'));
-            } else {
-                this.mapElements.push( new Tile(i % 10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, 'wall', false));
-            }                
-        }).call(this, i);
-    }
-
-/*    world.forEach(function(elem, index, arr) {
-        if(elem==0){
-            this.mapElements.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, 'floor'));
-        } else {
-            this.mapElements.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, 'wall', false));
-        }
-    }).call(this);*/
 };
 
 //Draws the chooseable tiles
