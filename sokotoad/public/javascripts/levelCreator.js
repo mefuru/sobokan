@@ -1,3 +1,165 @@
+var Editor = function(game){
+
+    this.game = game;
+    //needs acces to images from game, send in this (game) ?
+    //setuptRenderContext
+   this.editorTiles = []; //Chooseable tiles to create the level with
+   this.selectedEditorTile = ''; //String type of tile
+   this.playerIndex = -1; //To check if a player has been added to board
+
+   this.setupEditorRenderContext(); //trenger man this?
+   this.initMapEditor();
+   this.setupEventListenerBoard();
+   this.setupEventListenerEditor();
+   this.initSaveButton();
+   this.drawSelectorTiles();
+};
+
+Editor.prototype.setupEditorRenderContext = function(){
+
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = 300;
+    this.canvas.height = 800;
+    document.body.appendChild(canvas);
+
+    this.context = canvas.getContext("2d");
+};
+
+Editor.prototype.initMapEditor = function() {
+
+    this.editorTiles.push(new Tile(10, 100, 'floor'));
+    this.editorTiles.push(new Tile(10, 200, 'wall'));
+    this.editorTiles.push(new Tile(10, 300, 'player'));
+    this.editorTiles.push(new Tile(10, 400, 'crate'));
+    this.editorTiles.push(new Tile(10, 500, 'target'));
+    this.selectedEditorTile = 'player';
+
+};
+//Sets up and empty level for the editor
+Game.prototype.loadEditorLevel = function(){
+    world = [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+              1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+            ];
+    // 1 == wall, 0 == nothing, 2 == crate, 3 == target, 4 == player
+    for(var i = 0; i < world.length; i++){
+        (function(i){
+            if(world[i] == 0){
+                this.mapElements.push( new Tile(i % 10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, 'floor'));
+            } else {
+                this.mapElements.push( new Tile(i % 10 * this.elementWidth, Math.floor(i/10) * this.elementHeight, 'wall', false));
+            }                
+        }).call(this, i);
+    }
+
+/*    world.forEach(function(elem, index, arr) {
+        if(elem==0){
+            this.mapElements.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, 'floor'));
+        } else {
+            this.mapElements.push( new Tile(index%10 * this.elementWidth, Math.floor(index/10) * this.elementHeight, 'wall', false));
+        }
+    }).call(this);*/
+};
+
+//Draws the chooseable tiles
+Editor.prototype.drawSelectorTiles = function(){
+    this.editorTiles.forEach(function(elem) {
+        elem.draw(this.context);
+    });
+};
+
+Editor.prototype.sendLevelToServer = function(path, value){
+	method = "post";
+	var form = document.createElement("form");
+	form.setAttribute("method", method);
+	form.setAttribute("action", path);
+	var hiddenField = document.createElement("input");
+	hiddenField.setAttribute("type", "hidden");
+	hiddenField.setAttribute("name", "level");
+	hiddenField.setAttribute("value", value);
+	form.appendChild(hiddenField);
+
+	document.body.appendChild(form);
+	form.submit();
+};
+
+// create and save level arraym);
+Editor.prototype.saveLevel = function() {
+    this.sendLevelToServer("/createLevel", JSON.stringify(mapElements.map(enumerateType)));
+};
+
+// helper fn for saveLevel
+Editor.prototype.enumerateType = function(elem) {
+    if(elem.type == 'floor') return 0;
+    if(elem.type == 'wall') return 1;
+    if(elem.type == 'crate') return 2;
+    if(elem.type == 'target') return 3;
+    if(elem.type == 'player') return 4;
+};
+
+// hooks up a button to save level fn
+Editor.prototype.initSaveButton = function() {
+    var saveButton = document.getElementById("saveButton");
+    saveButton.addEventListener("click", function(event) {
+        this.saveLevel();
+    }, false);
+};
+
+Editor.prototype.setupEventListenerBoard = function(){
+    
+    this.game.canvas.addEventListener('click', function(event) {
+        var x = event.pageX,
+        y = event.pageY;
+
+        this.game.mapElements.forEach(function(elem, index) {
+            if(y > elem.yPos && y < elem.yPos + elementHeight && x > elem.xPos && x < elem.xPos + elementWidth && elem.mutable === true) {
+                if(this.selectedEditorTile === 'player') {
+                    if(this.playerIndex === -1) {
+                        this.playerIndex = index;
+                        elem.type = this.selectedEditorTile;
+                        this.drawBoard();
+                    } else {
+                        this.mapElements[this.playerIndex].type = 'floor';
+                        this.playerIndex = index;
+                        elem.type = this.selectedEditorTile;
+                        this.drawBoard();
+                    }
+                } else {
+                    elem.type = this.selectedEditorTile;
+                    drawBoard();
+                }
+            }
+            
+        });
+    }, false);
+
+};
+
+Editor.prototype.setupEventListenerEditor = function(){
+
+    // Add event listener for 'click' events
+    this.canvas.addEventListener('click', function(event) {
+        console.log('canvas editor clicked on');
+        var x = event.pageX - this.canvas.width,
+            y = event.pageY;
+        this.editorTiles.forEach(function(elem2) {
+            if(y > elem2.yPos && y < elem2.yPos + this.game.elementSize && x > elem2.xPos && x < elem2.xPos + this.game.elementSize) {
+                this.selectedEditorTile = elem2.type;
+                console.log(this.selectedEditorTile);
+            }
+        });
+
+    }, false);
+};
+
+/*
 // Initialise variables
 var canvas = document.createElement("canvas");
 canvas.width = 500;
@@ -111,18 +273,18 @@ var initWorld = function() {
 };
 
 var sendLevelToServer = function(path, value){
-	method = "post";
-	var form = document.createElement("form");
-	form.setAttribute("method", method);
-	form.setAttribute("action", path);
-	var hiddenField = document.createElement("input");
-	hiddenField.setAttribute("type", "hidden");
-	hiddenField.setAttribute("name", "level");
-	hiddenField.setAttribute("value", value);
-	form.appendChild(hiddenField);
+    method = "post";
+    var form = document.createElement("form");
+    form.setAttribute("method", method);
+    form.setAttribute("action", path);
+    var hiddenField = document.createElement("input");
+    hiddenField.setAttribute("type", "hidden");
+    hiddenField.setAttribute("name", "level");
+    hiddenField.setAttribute("value", value);
+    form.appendChild(hiddenField);
 
-	document.body.appendChild(form);
-	form.submit();
+    document.body.appendChild(form);
+    form.submit();
 }
 
 // create and save level arraym);
@@ -206,3 +368,5 @@ canvas2.addEventListener('click', function(event) {
 initWorld();
 initMapEditor();
 initSaveButton();
+
+*/
